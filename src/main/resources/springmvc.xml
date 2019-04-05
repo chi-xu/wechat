@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="
+  http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/mvc
+  http://www.springframework.org/schema/mvc/spring-mvc.xsd
+  http://www.springframework.org/schema/context
+  http://www.springframework.org/schema/context/spring-context.xsd">
+    
+   	 <!-- 告知Spring，我们启用注解驱动 -->  
+     <mvc:annotation-driven conversion-service="conversionService"/>
+     
+     <!--  开启注解,扫描com.controller包下的所有的控制器 -->
+     <context:component-scan base-package="com.wechat.controller" />
+    
+     <!-- org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler，  
+    它会像一个检查员，对进入DispatcherServlet的URL进行筛查，如果发现是静态资源的请求，  
+    就将该请求转由Web应用服务器默认的Servlet处理，如果不是静态资源的请求，才由DispatcherServlet继续处理。 -->  
+    <mvc:default-servlet-handler/> 
+    
+    
+	
+
+	<!-- 配置转换器 -->
+	<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+		<property name="converters">
+			<list>
+				<bean class="com.wechat.controller.DateConvert" />
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 实现访问多方法的解析器,需要的controller注入就可以 -->
+	 <bean id="paramMethodResolver" class="org.springframework.web.servlet.mvc.multiaction.ParameterMethodNameResolver">
+        <property name="paramName" value="action"></property>    
+    </bean>
+	
+	 <!-- 配置视图解析器 -->
+  	  <bean
+        class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/" />
+        <property name="suffix" value=".jsp" />
+      </bean>
+      
+      <!-- 配置Json -->
+	  <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+	        <property name="messageConverters">
+	            <list>
+	                <ref bean="mappingJackson2HttpMessageConverter" />
+	            </list>
+	        </property>
+	    </bean>
+      <bean id="mappingJackson2HttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+        <property name="supportedMediaTypes">
+            <list>
+                <value>text/html;charset=UTF-8</value>
+                <value>text/json;charset=UTF-8</value>
+                <value>application/json;charset=UTF-8</value>
+            </list>
+        </property>
+    </bean>
+    
+    <!-- 过滤静态文件 -->
+    <mvc:resources location="/bootstrap-3.3.7/" mapping="/bootstrap-3.3.7/**" />
+    <mvc:resources location="/bootstrap-3.3.7/css/" mapping="/css/**" />
+
+    <!--<mvc:resources location="/bootstrap-3.3.7/image/" mapping="/image/**" />-->
+    
+     <!-- 文件上传 -->
+	<!--<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		&lt;!&ndash; 设置上传文件的最大尺寸为5MB &ndash;&gt;
+		<property name="maxUploadSize">
+			<value>5242880</value>
+		</property>
+		<property name="defaultEncoding" value="UTF-8"/>
+		&lt;!&ndash; 延迟加载 &ndash;&gt;
+		<property name="resolveLazily" value="true" />
+	</bean>-->
+	
+	<!--注册拦截器 -->
+<!--     <mvc:interceptors>
+    	<mvc:interceptor>
+    		<mvc:mapping path="/**"/>
+    		<mvc:exclude-mapping path="/bootstrap-3.3.7/**/**"/>
+    		<bean class="com.controller.LoginInterceptor"/>
+    	</mvc:interceptor>    	
+    </mvc:interceptors> -->
+    
+</beans>

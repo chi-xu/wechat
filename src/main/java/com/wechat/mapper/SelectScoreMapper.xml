@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wechat.mapper.SelectScoreMapper">
+
+    <resultMap id="getMap" type="Score">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="credit" column="credit"/>
+        <result property="score" column="score"/>
+        <result property="year" column="year"/>
+        <result property="term" column="term"/>
+
+        <association property="course" column="courseId" javaType="Course">
+            <id property="id" column="id"/>
+            <result property="courseId" column="course_id"/>
+            <result property="courseName" column="course_name"/>
+        </association>
+
+        <association property="users" column="userId" javaType="Users">
+            <id property="id" column="id"/>
+            <result property="userId" column="user_id"/>
+        </association>
+    </resultMap>
+
+    <select id="queryScore" parameterType="Score" resultMap="getMap">
+        select s.id,s.user_id,c.course_name,s.credit,s.score from score s
+        join users u on u.user_id=s.user_id
+        join course c on c.course_id=s.course_id
+        <where>
+            u.user_id=#{userId}
+            <if test="year!=null and year!=''">
+                and s.year=#{year}
+            </if>
+            <if test="term!=null and term!=''">
+                and s.term=#{term}
+            </if>
+        </where>
+    </select>
+
+    <!--查该用户所有学年(注意去重)-->
+    <select id="queryYear" parameterType="String" resultMap="getMap">
+        select id, year,count(distinct year) from score where user_id=#{userId} group by year
+    </select>
+
+
+</mapper>

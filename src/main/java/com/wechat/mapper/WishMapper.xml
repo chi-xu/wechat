@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wechat.mapper.WishMapper">
+    <resultMap id="getMap" type="Wish">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="publishtime" column="publishtime"/>
+        <result property="content" column="content"/>
+    </resultMap>
+
+
+    <!--发表心愿-->
+    <insert id="addWish" parameterType="Wish">
+        insert into wish(username,publishtime,content) values (#{username},#{publishtime},#{content})
+    </insert>
+
+    <!--查询所有心愿-->
+    <select id="queryWish" resultMap="getMap">
+        select * from wish
+    </select>
+
+    <!--查询总记录数-->
+    <select id="selCount" resultType="Integer">
+        select count(*) from wish
+    </select>
+</mapper>

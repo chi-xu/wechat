@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wechat.mapper.PointMapper">
+
+    <resultMap id="getMap" type="Point">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="point" column="point"/>
+        <result property="signTime" column="sign_time"/>
+    </resultMap>
+
+    <!--第一次签到-->
+    <insert id="firstSign" parameterType="String">
+        insert into point(user_id,point,sign_time) values(#{userId},3,now())
+    </insert>
+
+    <!--签到-->
+    <update id="sign" parameterType="String">
+        update point set point=point+3,sign_time=now() where user_id=#{userId}
+    </update>
+
+    <!--检查是否是第一次签到-->
+    <select id="checkSign" parameterType="String" resultMap="getMap">
+        select point from point where user_id=#{userId}
+    </select>
+
+    <!--查询签到时间，判断当天是否已经签过-->
+    <select id="queryTime" parameterType="String" resultType="Date">
+        select sign_time from point where user_id=#{userId}
+    </select>
+
+    <!--查询该用户是当日第几个签到的-->
+    <select id="queryNum" parameterType="Date" resultType="Integer">
+        select count(*) from point where sign_time>#{signTime}
+    </select>
+</mapper>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wechat.mapper.UsersMapper">
+
+    <resultMap id="getMap" type="Users">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+
+    </resultMap>
+
+
+    <!--插入用户openid-->
+
+    <update id="add" parameterType="Users">
+        update users set openid=#{openid} where user_id=#{userId}
+    </update>
+
+    <!--用户绑定时检查数据库中是否有此用户-->
+    <select id="queryCount" parameterType="Users" resultType="Integer">
+        select count(*) from users where user_id=#{userId} and password=#{password}
+    </select>
+
+    <!--用户查询时首先判断该用户是已否绑定-->
+    <select id="queryId" parameterType="String" resultType="String">
+        select user_id from users where openid=#{openid}
+    </select>
+
+    <!--查询用户的聊天状态-->
+    <select id="chartStatus" parameterType="String" resultType="Integer">
+        select status from users where openid=#{openid};
+    </select>
+
+    <!--聊天状态置为1-->
+    <update id="statusToOne" parameterType="String">
+        update users set status=1 where openid=#{openid}
+    </update>
+
+    <!--聊天状态置为0-->
+    <update id="statusToZero" parameterType="String">
+        update users set status=0 where openid=#{openid}
+    </update>
+
+
+</mapper>

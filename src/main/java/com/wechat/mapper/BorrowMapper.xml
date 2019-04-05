@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wechat.mapper.BorrowMapper">
+    <resultMap id="getMap" type="Borrow">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bookId" column="book_id"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="start_date"/>
+
+        <association property="users" column="userId" javaType="Users">
+            <id property="id" column="id"/>
+            <result property="userId" column="user_id"/>
+        </association>
+
+        <association property="book" column="bookId" javaType="Book">
+            <id property="id" column="id"/>
+            <result property="bookId" column="book_id"/>
+            <result property="bookName" column="book_name"/>
+        </association>
+    </resultMap>
+
+    <!--查询所借图书(状态值为1的是在借图书)-->
+    <select id="queryBorrow" parameterType="String" resultMap="getMap">
+        select bw.id,b.book_id,b.book_name,bw.start_date,bw.end_date from borrow bw
+        join book b on bw.book_id=b.book_id
+        join users u on bw.user_id=u.user_id
+        where u.user_id=#{userId} and bw.status=1
+    </select>
+
+    <!--查询在借的图书数量-->
+    <select id="selCount" parameterType="String" resultType="Integer">
+        select count(*) from borrow
+        where user_id=#{userId} and status=1
+    </select>
+</mapper>
