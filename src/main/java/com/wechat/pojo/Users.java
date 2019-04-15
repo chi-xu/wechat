@@ -7,7 +7,7 @@ public class Users {
     private String idCard;
     private String password;
     private String openid;
-    private Integer status;
+
 
     public Integer getId() {
         return id;
@@ -57,11 +57,4 @@ public class Users {
         this.openid = openid;
     }
 
-    public Integer getStatus() {
-        return status;
-    }
-
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
 }

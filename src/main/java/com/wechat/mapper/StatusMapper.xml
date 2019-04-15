@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wechat.mapper.StatusMapper">
+    <resultMap id="getMap" type="Status">
+        <id property="id" column="id"/>
+        <result property="openid" column="openid"/>
+        <result property="chatStatus" column="chat_status"/>
+        <result property="parcelStatus" column="parcel_status"/>
+    </resultMap>
+
+    <!--用户关注公众号时将openid插入表中-->
+    <insert id="addOpenid" parameterType="String" >
+        insert into status (openid) values (#{openid})
+    </insert>
+
+    <!--判断用户是否处于智能聊天状态-->
+    <select id="chartStatus" parameterType="String" resultType="Integer">
+        select chat_status from status where openid=#{openid};
+    </select>
+
+    <!--聊天状态置为1-->
+    <update id="chatStatusToOne" parameterType="String">
+        update status set chat_status=1 where openid=#{openid}
+    </update>
+
+    <!--聊天状态置为0-->
+    <update id="chatStatusToZero" parameterType="String">
+        update status set chat_status=0 where openid=#{openid}
+    </update>
+
+    <!--判断用户是否处在快递查询状态-->
+    <select id="parcelStatus" parameterType="String" resultType="Integer">
+        select parcel_status from status where openid=#{openid};
+    </select>
+
+    <!--快递查询状态置为1-->
+    <update id="parcelStatusToOne" parameterType="String">
+        update status set parcel_status=1 where openid=#{openid}
+    </update>
+
+    <!--快递查询状态状态置为0-->
+    <update id="parcelStatusToZero" parameterType="String">
+        update status set parcel_status=0 where openid=#{openid}
+    </update>
+
+    <!--用户取消关注时删除该openid的记录值-->
+    <delete id="delOpenid" parameterType="String">
+        delete from status where openid=#{openid}
+    </delete>
+</mapper>

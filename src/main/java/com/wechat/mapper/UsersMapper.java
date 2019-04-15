@@ -9,9 +9,5 @@ public interface UsersMapper {
 
     public String queryId(String openid);
 
-    public Integer chartStatus(String openid);
-
-    public void statusToOne(String openid);
-
-    public void statusToZero(String openid);
+    public void remove(String userId);
 }

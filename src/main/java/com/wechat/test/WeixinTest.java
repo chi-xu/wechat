@@ -45,17 +45,10 @@ public class WeixinTest {
                 System.out.println(result);
             }*/
 
-            /*String result = WeixinUtil.translateFull("football");
-            System.out.println(result);*/
 
-            /*String result = WeixinUtil.parcel("顺丰","237794232989");
-            System.out.println(result);*/
 
-            /*String result = WeixinUtil.parcelCompany();
-            System.out.println(result);*/
-
-            String result = WeixinUtil.joke();
-            System.out.println(result);
+           /*String url = "http://pic11.nipic.com/20101111/6153002_002722872554_2.jpg";
+           System.out.println("结果："+WeixinUtil.face(url));*/
 
 
         } catch (Exception e) {

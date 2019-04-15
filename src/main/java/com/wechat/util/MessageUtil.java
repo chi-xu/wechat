@@ -87,13 +87,16 @@ public class MessageUtil {
      */
     public static String menuText(){
         StringBuffer sb = new StringBuffer();
-        sb.append("欢迎您的关注，请根据提示操作：\n\n");
-        sb.append("1、文本\n");
-        sb.append("2、图文\n");
-        sb.append("3、图片\n");
-        sb.append("4、音乐\n");
-        sb.append("此外，您还可以输入“翻译”两个字调出翻译使用指南\n\n");
-        sb.append("回复？调出此菜单。");
+        sb.append("欢迎您的关注,您可以通过使用以下命令来完成不同的操作：\n\n");
+        sb.append("1、绑定学号 格式：绑定+学号+身份证后6位（加号必须要有，下面的命令一样），用于微信号与学号的绑定，是后面操作的前提\n");
+        sb.append("2、解绑 格式：绑定+学号+身份证后6位\n");
+        sb.append("3、查询天气 格式：地名+天气，如：常州天气\n");
+        sb.append("4、翻译 格式：翻译+翻译内容，如：翻译我爱你\n");
+        sb.append("5、笑话 格式：笑话\n");
+        sb.append("6、快递查询 格式：先发送‘快递查询’，再根据提示发送公司编号和运单号\n");
+        sb.append("7、人脸识别 格式：直接发送人脸图片\n");
+        sb.append("-----------------------------\n");
+        sb.append("回复【帮助】调出此菜单。");
         return sb.toString();
     }
 
@@ -109,6 +112,20 @@ public class MessageUtil {
         return sb.toString();
     }
 
+    public static String binding(){
+        StringBuffer sb = new StringBuffer();
+        sb.append("绑定格式错误！\n");
+        sb.append("格式为：绑定+学号+身份证后六位");
+        return sb.toString();
+    }
+
+    public static String remove(){
+        StringBuffer sb = new StringBuffer();
+        sb.append("解绑格式错误！\n");
+        sb.append("格式为：解绑+学号+身份证后六位");
+        return sb.toString();
+    }
+
     public static String translate(){
         StringBuffer sb=new StringBuffer();
         sb.append("词组翻译使用指南\n\n");
@@ -116,7 +133,7 @@ public class MessageUtil {
         sb.append("翻译足球\n");
         sb.append("翻译中国足球\n");
         sb.append("翻译football\n\n");
-        sb.append("回复？显示主菜单。");
+        sb.append("回复【帮助】显示主菜单。");
         return sb.toString();
     }
 
@@ -140,6 +157,12 @@ public class MessageUtil {
         return sb.toString();
     }
 
+    public static String parcel(){
+        StringBuffer sb=new StringBuffer();
+        sb.append("您输入的快递公司编号似乎有问题,请检查！");
+        return sb.toString();
+    }
+
     public static String register(){
         StringBuffer sb = new StringBuffer();
         sb.append("绑定成功！");
@@ -148,7 +171,22 @@ public class MessageUtil {
 
     public static String registerFail(){
         StringBuffer sb = new StringBuffer();
-        sb.append("绑定失败！");
+        sb.append("绑定失败！\n");
+        sb.append("请检查学号和密码是否错误！");
+        return sb.toString();
+    }
+
+    public static String removeSuccess(){
+        StringBuffer sb = new StringBuffer();
+        sb.append("解绑成功!");
+
+        return sb.toString();
+    }
+
+    public static String removeFail(){
+        StringBuffer sb = new StringBuffer();
+        sb.append("解绑失败！\n");
+        sb.append("请检查学号和密码是否错误！");
         return sb.toString();
     }
 

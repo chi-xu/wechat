@@ -28,18 +28,9 @@ public class UsersServiceImpl implements UsersService {
         return this.usersMapper.queryId(userId);
     }
 
-    @Override
-    public Integer chartStatus(String openid) {
-        return this.usersMapper.chartStatus(openid);
-    }
 
     @Override
-    public void statusToOne(String openid) {
-        this.usersMapper.statusToOne(openid);
-    }
-
-    @Override
-    public void statusToZero(String openid) {
-        this.usersMapper.statusToZero(openid);
+    public void remove(String userId) {
+        this.usersMapper.remove(userId);
     }
 }

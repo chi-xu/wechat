@@ -6,6 +6,7 @@ import com.wechat.pojo.Point;
 import com.wechat.pojo.Users;
 import com.wechat.service.BorrowService;
 import com.wechat.service.PointService;
+import com.wechat.service.StatusService;
 import com.wechat.service.UsersService;
 import com.wechat.util.*;
 import org.springframework.stereotype.Controller;
@@ -22,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.SimpleFormatter;
+import java.util.regex.Pattern;
 
 @Controller
 @RequestMapping(value = "/weixin")
@@ -34,6 +36,8 @@ public class WechatController {
     private PointService pointService;
     @Resource
     private BorrowService borrowService;
+    @Resource
+    private StatusService statusService;
 
     @RequestMapping(value = "check", method = RequestMethod.GET)
     public void weChatVerification( String signature,  String timestamp,  String nonce,  String echostr,
@@ -74,29 +78,31 @@ public class WechatController {
         String content = map.get("Content");
 
         String  message = null;
+        /**
+         * 接收文本消息
+         */
         if(MessageUtil.MESSAGE_TEXT.equals(msgType)){
-            if(this.usersService.chartStatus(fromUserName)==1){ //如果聊天状态为1，则调用机器人
-                if("取消".equals(content)){
+            if(this.statusService.chartStatus(fromUserName)==1){ //如果聊天状态为1，则调用机器人
+                if("取消".equals(content)){ //如果输入取消，则退出智能聊天模式
                     message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.quitRobot());
-                    this.usersService.statusToZero(fromUserName);
+                    this.statusService.chatStatusToZero(fromUserName); //退出后将聊天状态值置为0，回到正常模式
                 }else {
                     message = MessageUtil.initText(toUserName, fromUserName, TulingApiUtil.getTulingResult(content));
                 }
 
-            }
-             else if("1".equals(content)){
-                message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.firstMenu());
-            }else if("2".equals(content)){
-                message = MessageUtil.initNewsMessage(toUserName,fromUserName);
+            }else if(this.statusService.parcelStatus(fromUserName)==1){ //如果处于快递查询状态
+                String com = content.substring(0,content.indexOf(" ")); //快递公司编号
+                String no = content.substring(content.indexOf(" ")+1,content.length()); //快递单号
+                Pattern pattern = Pattern.compile("[a-z]*");
+                if(!pattern.matcher(com).matches()){ //如果输入的编号不全是小写字母，则判定有误
+                    message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.parcel());
+                }else{
+                    message = MessageUtil.initText(toUserName,fromUserName,WeixinUtil.parcel(com,no));
+                    this.statusService.parcelStatusToZero(fromUserName); //快递查询后将快递状态值置为0，回到正常模式
+                }
 
-            }else if("3".equals(content)){
-                message = MessageUtil.initImageMessage(toUserName,fromUserName);
-            }else if("4".equals(content)){
-                message = MessageUtil.initMusicMessage(toUserName,fromUserName);
-            }else if("?".equals(content)||"？".equals(content)){
-                message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.menuText());
 
-            }else if (content.startsWith("翻译")){
+            } else if (content.startsWith("翻译")){
                 String word = content.replaceAll("^翻译", "").trim();
                 if ("".equals(word)) {
                     message = MessageUtil.initText(toUserName, fromUserName, MessageUtil.translate());
@@ -104,7 +110,13 @@ public class WechatController {
                     message = MessageUtil.initText(toUserName, fromUserName, WeixinUtil.translateFull(word));
                 }
             }else if(content.startsWith("绑定")){  // 绑定学号
-                message = binding(fromUserName,toUserName,content);
+                Pattern pattern = Pattern.compile("^\\绑定\\+\\d{10}\\+\\d{6}");
+                if(!pattern.matcher(content).matches()){ //格式不匹配
+                    message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.binding());
+                }else {
+                    message = binding(fromUserName,toUserName,content);
+                }
+
             }else if(content.endsWith("天气")){ //天气查询
                  String word = content.replaceAll("天气","").trim();
                  if("".equals(word)){
@@ -114,21 +126,45 @@ public class WechatController {
                  }
             }else if("快递查询".equals(content)){
                  message = MessageUtil.initText(toUserName,fromUserName,WeixinUtil.parcelCompany());
+                 this.statusService.parcelStatusToOne(fromUserName); //将状态值置为1,处于快递查询状态
 
             }else if("笑话".equals(content)){
                  message = MessageUtil.initText(toUserName,fromUserName,WeixinUtil.joke());
+            }else if("帮助".equals(content)){
+                message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.menuText());
+            }else if(content.startsWith("解绑")){ //解绑
+                Pattern pattern = Pattern.compile("^\\解绑\\+\\d{10}\\+\\d{6}");
+                if(!pattern.matcher(content).matches()){ //格式不匹配
+                    message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.remove());
+                }else {
+                    message = remove(fromUserName,toUserName,content);
+                }
             }
 
-        }else if(MessageUtil.MESSAGE_EVENT.equals(msgType)){
+
+        } /**接收图片消息*/
+         else if(MessageUtil.MESSAGE_IMAGE.equals(msgType)){
+            String url = map.get("PicUrl");
+            message = MessageUtil.initText(toUserName,fromUserName,WeixinUtil.face(url));
+
+        }/**接收事件推送*/
+         else if(MessageUtil.MESSAGE_EVENT.equals(msgType)){
             String eventType = map.get("Event");
             if(MessageUtil.MESSAGE_SUBSCRIBE.equals(eventType)){  //用户关注时弹出提示菜单
+                this.statusService.addOpenid(fromUserName);
                 message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.menuText());
+            }else if(MessageUtil.MESSAGE_UNSUBSCRIBE.equals((eventType))){ //取消关注
+                String userId = this.usersService.queryId(fromUserName);
+                if(userId != null){
+                    this.usersService.remove(userId);
+                }
+                this.statusService.delOpenid(fromUserName);
 
             }else if(MessageUtil.MESSAGE_CLICK.equals(eventType)){  //点击菜单拉取消息时的事件推送
                 String eventKey = map.get("EventKey");
                 if(eventKey.equals("34")) { //智能聊天
                     message = MessageUtil.initText(toUserName, fromUserName, MessageUtil.robot());//提醒用户进入智能聊天模式
-                    this.usersService.statusToOne(fromUserName);
+                    this.statusService.chatStatusToOne(fromUserName); //将状态值置为1,处于智能聊天状态
                 }else if (eventKey.equals("31")){ //点击签到
                     message = sign(fromUserName,toUserName);
                 }else if(eventKey.equals("13")){ //借书查询
@@ -167,6 +203,29 @@ public class WechatController {
         }
         return  message;
 
+    }
+
+    /**
+     * 用户解绑学号
+     * @param fromUserName
+     * @param toUserName
+     * @param content
+     * @return
+     */
+
+    public String remove(String fromUserName,String toUserName,String content){
+        String message = null;
+        Users users = new Users();
+        users.setOpenid(fromUserName);   //fromUserName即为用户的openid
+        users.setUserId(content.substring(3,13)); //取用户学号
+        users.setPassword(content.substring(14)); //取用户密码
+        if(this.usersService.queryCount(users)>0){ //如果有此用户，则删除该用户openid
+            this.usersService.remove(users.getUserId());
+            message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.removeSuccess());
+        }else {
+            message = MessageUtil.initText(toUserName,fromUserName,MessageUtil.removeFail());
+        }
+        return message;
     }
 
     /**

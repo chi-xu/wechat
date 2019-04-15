@@ -1,5 +1,8 @@
 package com.wechat.util;
 
+import com.wechat.face.Attributes;
+import com.wechat.face.FaceResult;
+import com.wechat.face.Faces;
 import com.wechat.joke.JokeResult;
 import com.wechat.menu.Button;
 import com.wechat.menu.ClickButton;
@@ -11,14 +14,14 @@ import com.wechat.parcelcompany.CompanyResult;
 import com.wechat.pojo.AccessToken;
 import com.wechat.weather.*;
 import net.sf.json.JSONObject;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
+import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -34,8 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 微信工具类
@@ -97,6 +99,64 @@ public class WeixinUtil {
         }
         return jsonObject;
 
+    }
+
+    /**
+     * post请求（多个参数）
+     * @param url
+     * @param params
+     * @return
+     */
+    public static JSONObject doPost(String url, java.util.List<NameValuePair> params) {
+        String body = null;
+        DefaultHttpClient  httpClient = new DefaultHttpClient();
+        JSONObject jsonObject = null;
+        // Post请求
+        HttpPost httppost = new HttpPost(url);
+        try {
+            // 设置参数
+            httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+            // 发送请求
+            HttpResponse httpresponse = httpClient.execute(httppost);
+            // 获取返回数据
+            HttpEntity entity = httpresponse.getEntity();
+            if (entity != null) {
+                body = EntityUtils.toString(entity,"UTF-8");
+                jsonObject = JSONObject.fromObject(body);
+            }
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObject;
+    }
+
+    /**
+     *
+     * Map转String
+     * @param map
+     * @return
+     */
+    public static String getMapToString(Map<String,String> map){
+        Set<String> keySet = map.keySet();
+        //将set集合转换为数组
+        String[] keyArray = keySet.toArray(new String[keySet.size()]);
+        //给数组排序(升序)
+        Arrays.sort(keyArray);
+        //因为String拼接效率会很低的，所以转用StringBuilder
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < keyArray.length; i++) {
+            // 参数值为空，则不参与签名 这个方法trim()是去空格
+            if ((String.valueOf(map.get(keyArray[i]))).trim().length() > 0) {
+                sb.append(keyArray[i]).append(":").append(String.valueOf(map.get(keyArray[i])).trim());
+            }
+            if(i != keyArray.length-1){
+                sb.append(",");
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -545,12 +605,12 @@ public class WeixinUtil {
      */
     public static String parcel(String com,String no) throws ParseException, IOException{
         String url = "http://v.juhe.cn/exp/index?key=51e31c552e1d45191c5868e61cd89959&com=COM&no=NO";
-        String url1 = url.replaceAll("COM",URLEncoder.encode(com,"UTF-8"));
-        url = url1.replaceAll("NO",URLEncoder.encode(no,"UTF-8"));
+        url = url.replaceAll("COM",URLEncoder.encode(com,"UTF-8"));
+        url = url.replaceAll("NO",URLEncoder.encode(no,"UTF-8"));
         JSONObject jsonObject = doGetStr(url);
         String error_code = jsonObject.getString("error_code");
         StringBuffer sb = new StringBuffer();
-        if("0".equals(error_code)){
+        if("0".equals(error_code)){ //error_code=0，则查询成功
             ParcelResult parcelResult = (ParcelResult) JSONObject.toBean(jsonObject,ParcelResult.class);
             com.wechat.parcel.Result result = parcelResult.getResult();
             sb.append("快递公司:"+result.getCom()+"\n");
@@ -562,6 +622,8 @@ public class WeixinUtil {
                 sb.append("地点:"+p.getRemark()+"\n");
                 sb.append("..............................\n");
             }
+        }else {
+            sb.append("错误码："+error_code);
         }
         return sb.toString();
 
@@ -580,13 +642,12 @@ public class WeixinUtil {
         if("0".equals(error_code)){
             CompanyResult companyResult = (CompanyResult)JSONObject.toBean(jsonObject,CompanyResult.class);
             sb.append("请根据物流编号进行查询！\n");
-            sb.append("格式为：编号 快递单号\n");
+            sb.append("格式为：编号 快递单号(中间加空格)\n");
             sb.append("如：sf 111111111111111\n");
-            sb.append("————————————————————\n");
+            sb.append("———————————————\n");
             com.wechat.parcelcompany.Result[] result = companyResult.getResult();
             for(com.wechat.parcelcompany.Result r : result){
                 sb.append(r.getCom()+"："+r.getNo()+"\n");
-                //sb.append("...........................\n");
             }
         }
 
@@ -594,8 +655,11 @@ public class WeixinUtil {
     }
 
 
+    /**
+     * 笑话
+     * @return
+     */
     public static String joke(){
-        //String url = "http://v.juhe.cn/joke/content/list.php?key=cef1f65377d9c2b351d62f6f1d691a70&page=2&pagesize=2&sort=asc&time=1418745237";
         String url = "http://v.juhe.cn/joke/randJoke.php?key=cef1f65377d9c2b351d62f6f1d691a70";
         JSONObject jsonObject = doGetStr(url);
         int error_code = jsonObject.getInt("error_code");
@@ -603,13 +667,94 @@ public class WeixinUtil {
         if(0==error_code){
             JokeResult jokeResult = (JokeResult)JSONObject.toBean(jsonObject,JokeResult.class);
             com.wechat.joke.Result[] result = jokeResult.getResult();
-            //com.wechat.joke.Data[] data = result.getData();
-            //for(com.wechat.joke.Result r : result){
                 sb.append(result[0].getContent()+"\n\n");
             //}
         }else {
             sb.append("错误码为："+error_code);
         }
+        return sb.toString();
+    }
+
+    /**
+     * 人脸识别
+     * @param image_url：图片路径
+     * @return
+     * @throws ParseException
+     * @throws IOException
+     */
+    public static String face(String image_url) throws ParseException, IOException{
+        String url = "https://api-cn.faceplusplus.com/facepp/v3/detect";
+        NameValuePair api_key = new BasicNameValuePair("api_key","tu8GY-_F6k61Ear8HPtVrYZbSCcnJKaj");
+        NameValuePair api_secret = new BasicNameValuePair("api_secret","T7Hi7MLXgdBKeCtnhAdFXFuzXSWckfKH");
+        NameValuePair imageUrl = new BasicNameValuePair("image_url",image_url);
+        NameValuePair return_attributes = new BasicNameValuePair("return_attributes","ethnicity,gender,age,beauty,emotion");
+        java.util.List<NameValuePair> list = new ArrayList<NameValuePair>();
+        list.add(api_key);
+        list.add(api_secret);
+        list.add(imageUrl);
+        list.add(return_attributes);
+        JSONObject jsonObject = doPost(url,list);
+        System.out.println(jsonObject);
+        String image_id = jsonObject.getString("image_id");
+        StringBuffer sb = new StringBuffer();
+        if(image_id != null){ //如果返回的json数据有image_id属性
+            FaceResult faceResult = (FaceResult)JSONObject.toBean(jsonObject,FaceResult.class);
+            Faces[] faces = faceResult.getFaces();
+            if(faces.length>0){ //如果检测到人脸,取数据
+                for(Faces f : faces){
+                    String ethnicity = f.getAttributes().getEthnicity().getValue(); //人种
+                    String gender = f.getAttributes().getGender().getValue(); //性别
+                    int age = f.getAttributes().getAge().getValue(); //年龄
+                    Double male_score = f.getAttributes().getBeauty().getMale_score(); //男性认为的此人脸颜值分数。值越大，颜值越高
+                    Double female_score = f.getAttributes().getBeauty().getFemale_score(); //女性认为的此人脸颜值分数。值越大，颜值越高
+                    /**根据情绪的返回值来判断该人的情绪,值越大，置信度越高*/
+                    Double anger = f.getAttributes().getEmotion().getAnger();
+                    Double disgust = f.getAttributes().getEmotion().getDisgust();
+                    Double fear = f.getAttributes().getEmotion().getFear();
+                    Double happiness = f.getAttributes().getEmotion().getHappiness();
+                    Double neutral = f.getAttributes().getEmotion().getNeutral();
+                    Double sadness = f.getAttributes().getEmotion().getSadness();
+                    Double surprise = f.getAttributes().getEmotion().getSurprise();
+                    Double emotion[] = {anger,fear,disgust,happiness,neutral,sadness,surprise};
+                    Arrays.sort(emotion);
+                    Double emo = emotion[emotion.length-1]; //取情绪所有属性的最大值
+
+                    sb.append("人种："+ethnicity+"\n");
+                    sb.append("性别："+gender+"\n");
+                    sb.append("年龄："+age+"\n");
+                    if(gender.equals("Male")){
+                        sb.append("颜值:"+female_score+"\n");
+                    }else {
+                        sb.append("颜值"+male_score+"\n");
+                    }
+                    if(emo == anger){
+                        sb.append("情绪：愤怒\n");
+                    }else if(emo == disgust){
+                        sb.append("情绪：厌恶\n");
+                    }else if(emo == fear){
+                        sb.append("情绪：恐惧\n");
+                    }else if(emo == happiness){
+                        sb.append("情绪：高兴\n");
+                    }else if(emo == neutral){
+                        sb.append("情绪：平静\n");
+                    }else if(emo == sadness){
+                        sb.append("情绪：伤心\n");
+                    }else if(emo == surprise){
+                        sb.append("情绪：惊讶\n");
+                    }
+
+                    sb.append("---------------------\n");
+
+                }
+            }else { //没有检测到人脸
+                sb.append("没有检测到人脸！");
+            }
+
+        }else { //如果没有image_id为空,则返回失败信息
+            String error_message = jsonObject.getString("error_message");
+            sb.append("错误信息："+error_message);
+        }
+
         return sb.toString();
     }
 
